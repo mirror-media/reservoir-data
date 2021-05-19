@@ -1,0 +1,136 @@
+from datetime import datetime, timezone, timedelta
+from google.cloud import storage
+from pytz import timezone
+import __main__
+import gzip
+import json
+import requests
+
+__taipei_tz__ = timezone('Asia/Taipei')
+
+__api_time_format__ = '%Y-%m-%dT%H:%M:%S'
+
+def get_daily_operational_statistics() -> dict:
+    api = 'https://data.wra.gov.tw/Service/OpenData.aspx?format=json&id=50C8256D-30C5-4B8D-9B84-2E14D5C6DF71'
+
+    r = requests.get(api)
+    j = r.json()['DailyOperationalStatisticsOfReservoirs_OPENDATA']
+
+    ids = set()
+    for reservoir in j:
+        ids.add(reservoir['ReservoirIdentifier'])
+
+    return {id: max(filter(lambda r: r['ReservoirIdentifier'] == id, j), key=lambda r: datetime.strptime(r['RecordTime'], __api_time_format__) ) for id in ids}
+
+
+def get_reservoir_condition_data() -> dict:
+    api = 'https://data.wra.gov.tw/Service/OpenData.aspx?format=json&id=1602CA19-B224-4CC3-AA31-11B1B124530F'
+
+    r = requests.get(api)
+    j = r.json()['ReservoirConditionData_OPENDATA']
+
+    ids = set()
+    for reservoir in j:
+        ids.add(reservoir['ReservoirIdentifier'])
+
+    return {id: max(filter(lambda r: r['ReservoirIdentifier'] == id, j), key=lambda r: datetime.strptime(r['ObservationTime'], __api_time_format__) ) for id in ids}
+
+
+def update_data(parent: dict, id: str, key: str, update_time: datetime, data):
+    if id not in parent:
+        parent[id] = {}
+    if key not in parent[id]:
+
+        parent[id][key]= {
+            'UpdateTime': datetime(2, 1, 1, 0, 0, 0).astimezone().isoformat(),
+        }
+    if datetime.fromisoformat(update_time) > datetime.fromisoformat(parent[id][key]['UpdateTime']):
+        parent[id][key] = {
+            'Data': data,
+            'UpdateTime': update_time,
+        }
+
+
+def get_normalized_time(time: str) -> str:
+    return __taipei_tz__.localize(datetime.strptime(
+        time, __api_time_format__)).isoformat()
+
+
+def get_observation_time(data: dict) -> str:
+    return get_normalized_time(data['ObservationTime'])
+
+
+def get_record_time(data: dict) -> str:
+    return get_normalized_time(data['RecordTime'])
+
+
+def calculate_effective_water_storage_storage_percentage(data: dict):
+    for id in data:
+        data[id]['EffectiveWaterStorageStoragePercentage'] = {
+            'Data': '{:.2%}'.format(float(
+                data[id]['EffectiveWaterStorageCapacity']['Data'])/float(data[id]['EffectiveCapacity']['Data'])) if data[id]['EffectiveWaterStorageCapacity']['Data'] != '' and data[id]['EffectiveCapacity']['Data'] != '' else '',
+            'UpdateTime': data[id]['EffectiveWaterStorageCapacity']['UpdateTime'],
+        }
+
+
+def convert_dict_to_list(data: dict) -> list:
+    for id in data.keys():
+        data[id].update({'ReservoirIdentifier': id})
+    return [data[id] for id in data.keys()]
+
+
+def upload_data(bucket_name: str, data: bytes, content_type: str, destination_blob_name: str, is_public: bool):
+    '''Uploads a file to the bucket.'''
+    # bucket_name = 'your-bucket-name'
+    # data = 'storage-object-content'
+
+    # Instantiates a client
+    storage_client = storage.Client()
+
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(destination_blob_name)
+    blob.content_encoding = 'gzip'
+
+
+    print(
+        '[%s] uploadling data to gs://%s/%s' % (__main__.__file__, bucket_name, destination_blob_name))
+
+    blob.upload_from_string(
+        data=gzip.compress(data=data, compresslevel=9), content_type=content_type, client=storage_client)
+    blob.content_language = 'zh'
+    blob.cache_control = 'max-age=300,public'
+    if is_public:
+        blob.make_public()
+    blob.patch()
+
+    print('[%s] finished uploading gs://%s/%s' % (__main__.__file__, bucket_name, destination_blob_name))
+
+def now_for_timezone(tz: timezone)->datetime:
+    return datetime.now().astimezone().astimezone(tz)
+
+def main():
+    reservoir_condition = get_reservoir_condition_data()
+
+    data = {}
+    for id in reservoir_condition.keys():
+        update_data(data, id, 'EffectiveWaterStorageCapacity',
+                   get_observation_time(reservoir_condition[id]), reservoir_condition[id]['EffectiveWaterStorageCapacity'])
+
+    daily_operational_statistics = get_daily_operational_statistics()
+
+    for id in reservoir_condition.keys():
+        update_data(data, id, 'EffectiveCapacity',
+                   get_record_time(daily_operational_statistics.get(id, {'RecordTime': now_for_timezone(__taipei_tz__).strftime(__api_time_format__)})), daily_operational_statistics.get(id, {'EffectiveCapacity': ''})['EffectiveCapacity'])
+        update_data(data, id, 'ReservoirName',
+                   get_record_time(daily_operational_statistics.get(id, {'RecordTime': now_for_timezone(__taipei_tz__).strftime(__api_time_format__)})), daily_operational_statistics.get(id, {'ReservoirName': ''})['ReservoirName'])
+
+    calculate_effective_water_storage_storage_percentage(data)
+    data['UpdateTime'] = now_for_timezone(__taipei_tz__).isoformat(timespec='seconds')
+
+    upload_data(bucket_name='projects.readr.tw',
+                data=json.dumps(data, ensure_ascii=False).encode('utf-8'), content_type='application/json; charset=zh-tw', destination_blob_name='data/reservoir.json', is_public=True)
+
+
+if __name__ == '__main__':
+    main()
+
