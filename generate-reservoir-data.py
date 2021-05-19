@@ -5,6 +5,7 @@ import __main__
 import gzip
 import json
 import requests
+import dashboard
 
 __taipei_tz__ = timezone('Asia/Taipei')
 
@@ -73,10 +74,9 @@ def calculate_effective_water_storage_storage_percentage(data: dict):
         }
 
 
-def convert_dict_to_list(data: dict) -> list:
-    for id in data.keys():
-        data[id].update({'ReservoirIdentifier': id})
-    return [data[id] for id in data.keys()]
+def add_reservoir_identifier(data: dict):
+    for id in filter(lambda key: type(key) == 'str' and key.isnumeric(), data.keys()):
+        data[id]['ReservoirIdentifier'] = { 'Data': id }
 
 
 def upload_data(bucket_name: str, data: bytes, content_type: str, destination_blob_name: str, is_public: bool):
@@ -127,8 +127,16 @@ def main():
     calculate_effective_water_storage_storage_percentage(data)
     data['UpdateTime'] = now_for_timezone(__taipei_tz__).isoformat(timespec='seconds')
 
+    add_reservoir_identifier(data)
+
     upload_data(bucket_name='projects.readr.tw',
                 data=json.dumps(data, ensure_ascii=False).encode('utf-8'), content_type='application/json; charset=zh-tw', destination_blob_name='data/reservoir.json', is_public=True)
+
+    dd = dashboard.convert_data_for_taiwan_dashboart(data)
+    dd['updated'] = now_for_timezone(__taipei_tz__).isoformat(timespec='seconds')
+
+    upload_data(bucket_name='projects.readr.tw',
+                data=json.dumps(dd, ensure_ascii=False).encode('utf-8'), content_type='application/json; charset=zh-tw', destination_blob_name='taiwan-dashboard/reservoir.json', is_public=True)
 
 
 if __name__ == '__main__':
