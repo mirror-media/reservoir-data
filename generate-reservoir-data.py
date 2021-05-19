@@ -75,7 +75,7 @@ def calculate_effective_water_storage_storage_percentage(data: dict):
 
 
 def add_reservoir_identifier(data: dict):
-    for id in filter(lambda key: type(key) == 'str' and key.isnumeric(), data.keys()):
+    for id in filter(lambda key: type(key) is str and key.isnumeric(), data.keys()):
         data[id]['ReservoirIdentifier'] = { 'Data': id }
 
 
