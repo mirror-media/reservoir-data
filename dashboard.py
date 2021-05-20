@@ -21,33 +21,33 @@ def convert_data_for_taiwan_dashboart(data:dict)->dict:
     north = {
         'main': [data[id] for id in __north_main__],
         'area': {
-            'area1': [data[id] for id in __north_area1__],
-            'area2': [data[id] for id in __north_area2__],
-            'area3': [data[id] for id in __north_area3__],
-            'area4': [data[id] for id in __north_area4__],
+            '基隆北海岸': [data[id] for id in __north_area1__],
+            '大臺北': [data[id] for id in __north_area2__],
+            '板新及桃園': [data[id] for id in __north_area3__],
+            '新竹': [data[id] for id in __north_area4__],
         },
     }
-    status['north'] = north
+    status['北部'] = north
 
     center = {
         'main': [data[id] for id in __center_main__],
         'area': {
-            'area1': [data[id] for id in __center_area1__],
-            'area2': [data[id] for id in __center_area2__],
-            'area3': [data[id] for id in __center_area3__],
+            '苗栗': [data[id] for id in __center_area1__],
+            '臺中': [data[id] for id in __center_area2__],
+            '彰雲投': [data[id] for id in __center_area3__],
         },
     }
-    status['center'] = center
+    status['中部'] = center
 
     south = {
         'main': [data[id] for id in __south_main__],
         'area': {
-            'area1': [data[id] for id in __south_area1__],
-            'area2': [data[id] for id in __south_area2__],
-            'area3': [data[id] for id in __south_area3__],
-            'area4': [data[id] for id in __south_area4__],
+            '嘉義': [data[id] for id in __south_area1__],
+            '臺南': [data[id] for id in __south_area2__],
+            '高雄': [data[id] for id in __south_area3__],
+            '屏東': [data[id] for id in __south_area4__],
         },
     }
-    status['south'] = south
+    status['南部'] = south
 
     return {'status': status}
