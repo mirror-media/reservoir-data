@@ -141,14 +141,14 @@ def main():
     data = generate_reservoir_data()
 
     upload_data(bucket_name='projects.readr.tw',
-                data=json.dumps(data, ensure_ascii=False).encode('utf-8'), content_type='application/json; charset=zh-tw', destination_blob_name='data/reservoir.json', is_public=True)
+                data=json.dumps(data, ensure_ascii=False).encode('utf-8'), content_type='application/json; charset=utf-8', destination_blob_name='data/reservoir.json', is_public=True)
 
     dd = dashboard.convert_data_for_taiwan_dashboart(data)
     dd['updated'] = now_for_timezone(
         __taipei_tz__).isoformat(timespec='seconds')
 
     upload_data(bucket_name='projects.readr.tw',
-                data=json.dumps(dd, ensure_ascii=False).encode('utf-8'), content_type='application/json; charset=zh-tw', destination_blob_name='taiwan-dashboard/reservoir.json', is_public=True)
+                data=json.dumps(dd, ensure_ascii=False).encode('utf-8'), content_type='application/json; charset=utf-8', destination_blob_name='taiwan-dashboard/reservoir.json', is_public=True)
 
 
 if __name__ == '__main__':
