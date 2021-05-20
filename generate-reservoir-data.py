@@ -76,7 +76,7 @@ def calculate_effective_water_storage_storage_percentage(data: dict):
 
 def add_reservoir_identifier(data: dict):
     for id in filter(lambda key: type(key) is str and key.isnumeric(), data.keys()):
-        data[id]['reservoirIdentifier'] = { 'Data': id }
+        data[id]['reservoirIdentifier'] = {'data': id}
 
 
 def upload_data(bucket_name: str, data: bytes, content_type: str, destination_blob_name: str, is_public: bool):
