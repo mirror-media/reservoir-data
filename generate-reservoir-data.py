@@ -107,7 +107,7 @@ def upload_data(bucket_name: str, data: bytes, content_type: str, destination_bl
           (__main__.__file__, bucket_name, destination_blob_name))
 
 
-def now_for_timezone(tz: timezone) -> datetime:
+def now_with_timezone(tz: timezone) -> datetime:
     return datetime.now().astimezone().astimezone(tz)
 
 
@@ -123,12 +123,12 @@ def generate_data() -> dict:
 
     for id in reservoir_condition.keys():
         update_data(data, id, 'effectiveCapacity',
-                    get_record_time(daily_operational_statistics.get(id, {'RecordTime': now_for_timezone(__taipei_tz__).strftime(__api_time_format__)})), daily_operational_statistics.get(id, {'EffectiveCapacity': ''})['EffectiveCapacity'])
+                    get_record_time(daily_operational_statistics.get(id, {'RecordTime': now_with_timezone(__taipei_tz__).strftime(__api_time_format__)})), daily_operational_statistics.get(id, {'EffectiveCapacity': ''})['EffectiveCapacity'])
         update_data(data, id, 'reservoirName',
-                    get_record_time(daily_operational_statistics.get(id, {'RecordTime': now_for_timezone(__taipei_tz__).strftime(__api_time_format__)})), daily_operational_statistics.get(id, {'ReservoirName': ''})['ReservoirName'])
+                    get_record_time(daily_operational_statistics.get(id, {'RecordTime': now_with_timezone(__taipei_tz__).strftime(__api_time_format__)})), daily_operational_statistics.get(id, {'ReservoirName': ''})['ReservoirName'])
 
     calculate_effective_water_storage_storage_percentage(data)
-    data['updateTime'] = now_for_timezone(
+    data['updateTime'] = now_with_timezone(
         __taipei_tz__).isoformat(timespec='seconds')
 
     add_reservoir_identifier(data)
@@ -144,7 +144,7 @@ def main():
                 data=json.dumps(data, ensure_ascii=False).encode('utf-8'), content_type='application/json; charset=utf-8', destination_blob_name='data/reservoir.json', is_public=True)
 
     dd = dashboard.convert_data_for_taiwan_dashboart(data)
-    dd['updated'] = now_for_timezone(
+    dd['updated'] = now_with_timezone(
         __taipei_tz__).isoformat(timespec='seconds')
 
     upload_data(bucket_name='projects.readr.tw',
