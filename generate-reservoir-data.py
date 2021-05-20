@@ -108,10 +108,10 @@ def upload_data(bucket_name: str, data: bytes, content_type: str, destination_bl
 def now_for_timezone(tz: timezone)->datetime:
     return datetime.now().astimezone().astimezone(tz)
 
-def main():
-    reservoir_condition = get_reservoir_condition_data()
-
+def generate_reservoir_data()->dict:
     data = {}
+
+    reservoir_condition = get_reservoir_condition_data()
     for id in reservoir_condition.keys():
         update_data(data, id, 'effectiveWaterStorageCapacity',
                    get_observation_time(reservoir_condition[id]), reservoir_condition[id]['EffectiveWaterStorageCapacity'])
@@ -128,6 +128,12 @@ def main():
     data['updateTime'] = now_for_timezone(__taipei_tz__).isoformat(timespec='seconds')
 
     add_reservoir_identifier(data)
+
+    return data
+
+def main():
+
+    data = generate_reservoir_data()
 
     upload_data(bucket_name='projects.readr.tw',
                 data=json.dumps(data, ensure_ascii=False).encode('utf-8'), content_type='application/json; charset=zh-tw', destination_blob_name='data/reservoir.json', is_public=True)
