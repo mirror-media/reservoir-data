@@ -11,6 +11,7 @@ __taipei_tz__ = timezone('Asia/Taipei')
 
 __api_time_format__ = '%Y-%m-%dT%H:%M:%S'
 
+
 def get_daily_operational_statistics() -> dict:
     api = 'https://data.wra.gov.tw/Service/OpenData.aspx?format=json&id=50C8256D-30C5-4B8D-9B84-2E14D5C6DF71'
 
@@ -21,7 +22,7 @@ def get_daily_operational_statistics() -> dict:
     for reservoir in j:
         ids.add(reservoir['ReservoirIdentifier'])
 
-    return {id: max(filter(lambda r: r['ReservoirIdentifier'] == id, j), key=lambda r: datetime.strptime(r['RecordTime'], __api_time_format__) ) for id in ids}
+    return {id: max(filter(lambda r: r['ReservoirIdentifier'] == id, j), key=lambda r: datetime.strptime(r['RecordTime'], __api_time_format__)) for id in ids}
 
 
 def get_reservoir_condition_data() -> dict:
@@ -34,7 +35,7 @@ def get_reservoir_condition_data() -> dict:
     for reservoir in j:
         ids.add(reservoir['ReservoirIdentifier'])
 
-    return {id: max(filter(lambda r: r['ReservoirIdentifier'] == id, j), key=lambda r: datetime.strptime(r['ObservationTime'], __api_time_format__) ) for id in ids}
+    return {id: max(filter(lambda r: r['ReservoirIdentifier'] == id, j), key=lambda r: datetime.strptime(r['ObservationTime'], __api_time_format__)) for id in ids}
 
 
 def update_data(parent: dict, id: str, key: str, update_time: datetime, data):
@@ -42,7 +43,7 @@ def update_data(parent: dict, id: str, key: str, update_time: datetime, data):
         parent[id] = {}
     if key not in parent[id]:
 
-        parent[id][key]= {
+        parent[id][key] = {
             'updateTime': datetime(2, 1, 1, 0, 0, 0).astimezone().isoformat(),
         }
     if datetime.fromisoformat(update_time) > datetime.fromisoformat(parent[id][key]['updateTime']):
@@ -91,7 +92,6 @@ def upload_data(bucket_name: str, data: bytes, content_type: str, destination_bl
     blob = bucket.blob(destination_blob_name)
     blob.content_encoding = 'gzip'
 
-
     print(
         '[%s] uploadling data to gs://%s/%s' % (__main__.__file__, bucket_name, destination_blob_name))
 
@@ -103,33 +103,38 @@ def upload_data(bucket_name: str, data: bytes, content_type: str, destination_bl
         blob.make_public()
     blob.patch()
 
-    print('[%s] finished uploading gs://%s/%s' % (__main__.__file__, bucket_name, destination_blob_name))
+    print('[%s] finished uploading gs://%s/%s' %
+          (__main__.__file__, bucket_name, destination_blob_name))
 
-def now_for_timezone(tz: timezone)->datetime:
+
+def now_for_timezone(tz: timezone) -> datetime:
     return datetime.now().astimezone().astimezone(tz)
 
-def generate_reservoir_data()->dict:
+
+def generate_reservoir_data() -> dict:
     data = {}
 
     reservoir_condition = get_reservoir_condition_data()
     for id in reservoir_condition.keys():
         update_data(data, id, 'effectiveWaterStorageCapacity',
-                   get_observation_time(reservoir_condition[id]), reservoir_condition[id]['EffectiveWaterStorageCapacity'])
+                    get_observation_time(reservoir_condition[id]), reservoir_condition[id]['EffectiveWaterStorageCapacity'])
 
     daily_operational_statistics = get_daily_operational_statistics()
 
     for id in reservoir_condition.keys():
         update_data(data, id, 'effectiveCapacity',
-                   get_record_time(daily_operational_statistics.get(id, {'RecordTime': now_for_timezone(__taipei_tz__).strftime(__api_time_format__)})), daily_operational_statistics.get(id, {'EffectiveCapacity': ''})['EffectiveCapacity'])
+                    get_record_time(daily_operational_statistics.get(id, {'RecordTime': now_for_timezone(__taipei_tz__).strftime(__api_time_format__)})), daily_operational_statistics.get(id, {'EffectiveCapacity': ''})['EffectiveCapacity'])
         update_data(data, id, 'reservoirName',
-                   get_record_time(daily_operational_statistics.get(id, {'RecordTime': now_for_timezone(__taipei_tz__).strftime(__api_time_format__)})), daily_operational_statistics.get(id, {'ReservoirName': ''})['ReservoirName'])
+                    get_record_time(daily_operational_statistics.get(id, {'RecordTime': now_for_timezone(__taipei_tz__).strftime(__api_time_format__)})), daily_operational_statistics.get(id, {'ReservoirName': ''})['ReservoirName'])
 
     calculate_effective_water_storage_storage_percentage(data)
-    data['updateTime'] = now_for_timezone(__taipei_tz__).isoformat(timespec='seconds')
+    data['updateTime'] = now_for_timezone(
+        __taipei_tz__).isoformat(timespec='seconds')
 
     add_reservoir_identifier(data)
 
     return data
+
 
 def main():
 
@@ -139,7 +144,8 @@ def main():
                 data=json.dumps(data, ensure_ascii=False).encode('utf-8'), content_type='application/json; charset=zh-tw', destination_blob_name='data/reservoir.json', is_public=True)
 
     dd = dashboard.convert_data_for_taiwan_dashboart(data)
-    dd['updated'] = now_for_timezone(__taipei_tz__).isoformat(timespec='seconds')
+    dd['updated'] = now_for_timezone(
+        __taipei_tz__).isoformat(timespec='seconds')
 
     upload_data(bucket_name='projects.readr.tw',
                 data=json.dumps(dd, ensure_ascii=False).encode('utf-8'), content_type='application/json; charset=zh-tw', destination_blob_name='taiwan-dashboard/reservoir.json', is_public=True)
@@ -147,4 +153,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
