@@ -43,12 +43,12 @@ def update_data(parent: dict, id: str, key: str, update_time: datetime, data):
     if key not in parent[id]:
 
         parent[id][key]= {
-            'UpdateTime': datetime(2, 1, 1, 0, 0, 0).astimezone().isoformat(),
+            'updateTime': datetime(2, 1, 1, 0, 0, 0).astimezone().isoformat(),
         }
-    if datetime.fromisoformat(update_time) > datetime.fromisoformat(parent[id][key]['UpdateTime']):
+    if datetime.fromisoformat(update_time) > datetime.fromisoformat(parent[id][key]['updateTime']):
         parent[id][key] = {
-            'Data': data,
-            'UpdateTime': update_time,
+            'data': data,
+            'updateTime': update_time,
         }
 
 
@@ -67,16 +67,16 @@ def get_record_time(data: dict) -> str:
 
 def calculate_effective_water_storage_storage_percentage(data: dict):
     for id in data:
-        data[id]['EffectiveWaterStorageStoragePercentage'] = {
-            'Data': '{:.2%}'.format(float(
-                data[id]['EffectiveWaterStorageCapacity']['Data'])/float(data[id]['EffectiveCapacity']['Data'])) if data[id]['EffectiveWaterStorageCapacity']['Data'] != '' and data[id]['EffectiveCapacity']['Data'] != '' else '',
-            'UpdateTime': data[id]['EffectiveWaterStorageCapacity']['UpdateTime'],
+        data[id]['effectiveWaterStorageStoragePercentage'] = {
+            'data': '{:.2%}'.format(float(
+                data[id]['effectiveWaterStorageCapacity']['data'])/float(data[id]['effectiveCapacity']['data'])) if data[id]['effectiveWaterStorageCapacity']['data'] != '' and data[id]['effectiveCapacity']['data'] != '' else '',
+            'updateTime': data[id]['effectiveWaterStorageCapacity']['updateTime'],
         }
 
 
 def add_reservoir_identifier(data: dict):
     for id in filter(lambda key: type(key) is str and key.isnumeric(), data.keys()):
-        data[id]['ReservoirIdentifier'] = { 'Data': id }
+        data[id]['reservoirIdentifier'] = { 'Data': id }
 
 
 def upload_data(bucket_name: str, data: bytes, content_type: str, destination_blob_name: str, is_public: bool):
@@ -113,19 +113,19 @@ def main():
 
     data = {}
     for id in reservoir_condition.keys():
-        update_data(data, id, 'EffectiveWaterStorageCapacity',
+        update_data(data, id, 'effectiveWaterStorageCapacity',
                    get_observation_time(reservoir_condition[id]), reservoir_condition[id]['EffectiveWaterStorageCapacity'])
 
     daily_operational_statistics = get_daily_operational_statistics()
 
     for id in reservoir_condition.keys():
-        update_data(data, id, 'EffectiveCapacity',
+        update_data(data, id, 'effectiveCapacity',
                    get_record_time(daily_operational_statistics.get(id, {'RecordTime': now_for_timezone(__taipei_tz__).strftime(__api_time_format__)})), daily_operational_statistics.get(id, {'EffectiveCapacity': ''})['EffectiveCapacity'])
-        update_data(data, id, 'ReservoirName',
+        update_data(data, id, 'reservoirName',
                    get_record_time(daily_operational_statistics.get(id, {'RecordTime': now_for_timezone(__taipei_tz__).strftime(__api_time_format__)})), daily_operational_statistics.get(id, {'ReservoirName': ''})['ReservoirName'])
 
     calculate_effective_water_storage_storage_percentage(data)
-    data['UpdateTime'] = now_for_timezone(__taipei_tz__).isoformat(timespec='seconds')
+    data['updateTime'] = now_for_timezone(__taipei_tz__).isoformat(timespec='seconds')
 
     add_reservoir_identifier(data)
 
