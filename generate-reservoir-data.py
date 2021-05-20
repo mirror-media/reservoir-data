@@ -111,7 +111,7 @@ def now_for_timezone(tz: timezone) -> datetime:
     return datetime.now().astimezone().astimezone(tz)
 
 
-def generate_reservoir_data() -> dict:
+def generate_data() -> dict:
     data = {}
 
     reservoir_condition = get_reservoir_condition_data()
@@ -138,7 +138,7 @@ def generate_reservoir_data() -> dict:
 
 def main():
 
-    data = generate_reservoir_data()
+    data = generate_data()
 
     upload_data(bucket_name='projects.readr.tw',
                 data=json.dumps(data, ensure_ascii=False).encode('utf-8'), content_type='application/json; charset=utf-8', destination_blob_name='data/reservoir.json', is_public=True)
