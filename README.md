@@ -4,7 +4,7 @@
 
 `dashboard.py` is to leverage the data and provide structured data for READr's Taiwan Dashboard.
 
-## Docker commands
+## Usage
 
 1. To build the image, run
   `docker build --tag generate-reservoir-data .`
