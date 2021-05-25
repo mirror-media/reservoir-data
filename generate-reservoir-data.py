@@ -1,11 +1,12 @@
 from datetime import datetime, timezone, timedelta
 from google.cloud import storage
 from pytz import timezone
+from utils import now_with_timezone
 import __main__
+import dashboard
 import gzip
 import json
 import requests
-import dashboard
 
 __taipei_tz__ = timezone('Asia/Taipei')
 
@@ -105,10 +106,6 @@ def upload_data(bucket_name: str, data: bytes, content_type: str, destination_bl
 
     print('[%s] finished uploading gs://%s/%s' %
           (__main__.__file__, bucket_name, destination_blob_name))
-
-
-def now_with_timezone(tz: timezone) -> datetime:
-    return datetime.now().astimezone().astimezone(tz)
 
 
 def generate_data() -> dict:
