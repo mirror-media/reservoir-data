@@ -3,10 +3,10 @@ from google.cloud import storage
 from pytz import timezone
 from utils import now_with_timezone
 import __main__
+import dashboard
 import gzip
 import json
 import requests
-import dashboard
 
 __taipei_tz__ = timezone('Asia/Taipei')
 
