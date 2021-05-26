@@ -5,7 +5,7 @@ __dashboard_data_set__ = {
     'status': {
         'north': {
             'main': ['10205', '10201', '10204'],
-            'hydropower': [],
+            # 'hydropower': [],
             'area': {
                 '基隆北海岸': ['10204', '10203'],
                 '大臺北': ['10205'],
@@ -20,11 +20,12 @@ __dashboard_data_set__ = {
                 '苗栗': ['10501', '10601'],
                 '臺中': ['20101', '20202'],
                 '彰雲投': ['20509', '20503'],
+                '中部': ['20201', '20502'],
             },
         },
         'south': {
             'main': ['30502', '30503', '30501'],
-            'hydropower': [],
+            # 'hydropower': [],
             'area': {
                 '嘉義': ['30301', '30302'],
                 '臺南': ['30502', '30501', '30503'],
@@ -35,7 +36,7 @@ __dashboard_data_set__ = {
     },
 }
 
-__additional_tags__ = {
+__additional_tag_for_area_reservoirs__ = {
     '苗栗': {
         '10501': '支援新竹',
     },
@@ -48,6 +49,10 @@ __additional_tags__ = {
         '30501': '支援嘉義',
         '30503': '支援高雄',
     },
+    '中部': {
+        '20201': '主要供發電',
+        '20502': '主要供發電',
+    }
 }
 
 
@@ -62,7 +67,7 @@ def convert_according_to_data_set(data, key, data_set):
 
 
 def additional_tag(key: str, id: str) -> dict:
-    return {'additionalTag': {'data': __additional_tags__.get(key, {}).get(id, ''), 'updateTime': now_with_timezone(timezone('Asia/Taipei')).isoformat(timespec='seconds')}}
+    return {'additionalTag': {'data': __additional_tag_for_area_reservoirs__.get(key, {}).get(id, ''), 'updateTime': now_with_timezone(timezone('Asia/Taipei')).isoformat(timespec='seconds')}}
 
 
 def convert_data_for_taiwan_dashboart(data: dict) -> dict:
