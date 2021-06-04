@@ -27,6 +27,7 @@ def convert_according_to_data_set(data, key, data_set):
         for id in range(len(data_set)):
             data_set[id] = data[data_set[id]
                                 ] | additional_tag(key, data_set[id])
+
     elif type(data_set) == dict:
         for k in data_set.keys():
             convert_according_to_data_set(data, k, data_set[k])
@@ -36,8 +37,13 @@ def additional_tag(key: str, id: str) -> dict:
     return {'additionalTag': {'data': __additional_tag_for_area_reservoirs__.get(key, {}).get(id, ''), 'updateTime': now_with_timezone(timezone('Asia/Taipei')).isoformat(timespec='seconds')}}
 
 
-def convert_data_for_taiwan_dashboart(data: dict) -> dict:
+def hotfix_reservoir_data(reservoirs: dict) -> dict:
+    r = reservoirs['30901']
+    if r['reservoirName']['data'] == '':
+        r['reservoirName']['data'] = '高屏溪攔河堰'
 
+
+def convert_data_for_taiwan_dashboart(data: dict) -> dict:
     dashboard_data_set = {
         'status': {
             '北部': {
@@ -73,6 +79,7 @@ def convert_data_for_taiwan_dashboart(data: dict) -> dict:
         },
     }
 
+    hotfix_reservoir_data(data)
     for key in dashboard_data_set.keys():
         convert_according_to_data_set(data, key, dashboard_data_set[key])
 
