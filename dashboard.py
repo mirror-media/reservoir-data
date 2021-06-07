@@ -72,14 +72,13 @@ def convert_data_for_taiwan_dashboart(data: dict) -> dict:
                 'area': {
                     '嘉義': ['30301', '30302'],
                     '臺南': ['30502', '30501', '30503'],
-                    '高雄': ['30803', '30901'],
+                    '高雄': ['30803'],
                     '屏東': ['31201'],
                 },
             },
         },
     }
 
-    hotfix_reservoir_data(data)
     for key in dashboard_data_set.keys():
         convert_according_to_data_set(data, key, dashboard_data_set[key])
 
